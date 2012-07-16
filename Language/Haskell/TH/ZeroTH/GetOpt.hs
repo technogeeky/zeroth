@@ -75,8 +75,8 @@ data TempFlags
     , tempStdFlag     :: Last StandardFlag
     }
 
-$(derive makeMonoid ''TempFlags)
-$(derive makeLazySet ''TempFlags)
+derive makeMonoid ''TempFlags
+derive makeLazySet ''TempFlags
 
 -- XXX: Use Data.Derive to generate these instead
 #define ADDER(FIELD,SET) FIELD ## ' = addP FIELD SET

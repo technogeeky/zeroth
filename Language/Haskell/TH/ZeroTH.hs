@@ -58,7 +58,7 @@ zeroTHInternal c
                                           else return input
          (thData, qualImports) <- case parseFileContents thInput of
                                      ParseOk m -> unzip <$> runTH (ghcPath c) ((if wholeFile c then id else onlySplices) m) (ghcArgs c)
-                                     e -> error $ show e ++ '\n' : thInput
+                                     e -> error $ "error near case thInput" ++ show e ++ '\n' : thInput
          let reattach :: [Decl] -> [Decl]
              reattach (SpliceDecl sLoc _ : t) = (parseDecls . fromMaybe err $ lookup (location sLoc) thData) ++ t
                  where
@@ -68,7 +68,7 @@ zeroTHInternal c
                            ParseOk (Module loc m pragmas mWarn exports im decls)
                              -> return (Module loc m pragmas mWarn exports (postProcessImports (dropImport c) im $ concat qualImports)
                                         (everywhere (mkT reattach) decls))
-                           e -> error $ show e ++ '\n' : zerothInput
+                           e -> error $ "error near case zerothInput\n" ++ show e ++ '\n' : zerothInput
          when (inputFile c == "-") $ removeFile inputFile2
          return ZeroTHOutput { originalSource = input
                              , combinedOutput = combinedData
@@ -76,7 +76,7 @@ zeroTHInternal c
                              }
     where parseDecls s = case parseFileContents s of
                            ParseOk (Module _ _ _ _ _ _ decls) -> decls
-                           e -> error $ show e ++ '\n' : s
+                           e -> error $ "error near parse.. s \n" ++ show e ++ '\n' : s
           onlySplices (Module loc m pragmas mWarn exports im decls) = Module loc m pragmas mWarn exports im $ listify isSplice decls
           isSplice (SpliceDecl _ _) = True
           isSplice _ = False
@@ -201,6 +201,7 @@ runTH ghc (Module _ _ pragmas _ _ imports decls) ghcOpts
     where pp :: (Pretty a) => a -> String
           pp = prettyPrintWithMode (defaultMode{layout = PPInLine})
           realM = unlines $ (pp . disableWarnings <$> pragmas)
+                            ++ ["{-# LANGUAGE TypeOperators #-}"]
                             ++ ["module ZerothTemp where"]
                             ++ (pp <$> imports)
                             ++ ["import qualified " ++ helperModule]
