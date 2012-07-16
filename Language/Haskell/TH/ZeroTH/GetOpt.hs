@@ -1,15 +1,14 @@
-{-# LANGUAGE TemplateHaskell, CPP #-}
+{-# LANGUAGE TemplateHaskell, CPP, TypeOperators #-}
 {-# OPTIONS_GHC -Wall -fno-warn-missing-signatures -pgmP cpphs -optP --hashes -optP --cpp #-}
 module Language.Haskell.TH.ZeroTH.GetOpt where
+
 
 import Control.Applicative                ( (<$>) )
 import Data.List                          ( isPrefixOf )
 import Data.Maybe                         ( fromMaybe )
-import Data.Monoid                        ( Any(..), Last(..), Monoid(..) )
 import Data.Monoid.Record                 ( addP )
 import System.Console.GetOpt              ( ArgDescr (..), OptDescr (..) )
 import System.Console.GetOpt.Skeleton     ( mParseArgs )
-import System.Console.GetOpt.StandardOpts ( StandardFlag, stdOpts )
 import System.Directory                   ( findExecutable )
 import System.Info                        ( os )
 #ifdef version
@@ -17,12 +16,20 @@ import Distribution.Version               ( Version(..) )
 #else
 #define version undefined
 #endif
+import Language.Haskell.TH.ZeroTH.Config ( Config(..) )
+
+import Language.Haskell.TH
+
+
+
+import Data.Monoid                        ( Any(..), Last(..), Monoid(..) )
+import System.Console.GetOpt.StandardOpts ( StandardFlag, stdOpts)
 
 import Data.DeriveTH       ( derive )
 import Data.Derive.LazySet ( makeLazySet )
 import Data.Derive.Monoid  ( makeMonoid )
 
-import Language.Haskell.TH.ZeroTH.Config ( Config(..) )
+
 
 getExecutable :: String -> Maybe FilePath -> IO FilePath
 getExecutable _ (Just path) = return path
@@ -53,6 +60,8 @@ orElse :: [a] -> [a] -> [a]
 orElse [] theDefault = theDefault
 orElse x  _          = x
 
+
+
 data TempFlags
     = TempFlags
     { tempGHCPath     :: Last FilePath
@@ -66,8 +75,8 @@ data TempFlags
     , tempStdFlag     :: Last StandardFlag
     }
 
-$(derive makeMonoid ''TempFlags)
-$(derive makeLazySet ''TempFlags)
+derive makeMonoid ''TempFlags
+derive makeLazySet ''TempFlags
 
 -- XXX: Use Data.Derive to generate these instead
 #define ADDER(FIELD,SET) FIELD ## ' = addP FIELD SET

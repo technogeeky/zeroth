@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeOperators #-}
+
 module Language.Haskell.TH.ZeroTH
     ( prettyPrintAll, zeroTH, zeroTHInternal
     ) where
@@ -85,6 +87,9 @@ prettyPrintAll out = unlines . mixComments (parseComments $ originalSource out) 
 location :: SrcLoc -> Location
 location sLoc = (srcLine sLoc, srcColumn sLoc)
 
+-- | IncludePragma and CFilesPragma no longer exist, and "ModulePragma" now contains "LanguagePragma"
+-- "OptionsPragma" and "AnnModulePragma"
+--
 numberAndPrettyPrint :: Module -> [(Location, String)]
 numberAndPrettyPrint (Module mLoc m prags mbWarn exports imp decls)
     = (nAndPPrag =<< prags)
@@ -121,8 +126,8 @@ numberAndPrettyPrint (Module mLoc m prags mbWarn exports imp decls)
           nAndPDec  d@(TypeFamDecl    loc _ _ _         ) = [(location loc, prettyPrint d)]
           nAndPDec  d@(TypeInsDecl    loc _ _           ) = [(location loc, prettyPrint d)]
           nAndPDec  d@(WarnPragmaDecl loc _             ) = [(location loc, prettyPrint d)]
-          nAndPPrag p@(IncludePragma  loc _             ) = [(location loc, prettyPrint p)]
-          nAndPPrag p@(CFilesPragma   loc _             ) = [(location loc, prettyPrint p)]
+--        nAndPPrag p@(IncludePragma  loc _             ) = [(location loc, prettyPrint p)]
+--        nAndPPrag p@(CFilesPragma   loc _             ) = [(location loc, prettyPrint p)]
           nAndPPrag   (OptionsPragma  loc mt s          ) = [(location loc, prettyPrint . OptionsPragma loc mt $ filterOptions s)]
           nAndPPrag   (LanguagePragma loc names         )
               | null filteredNames = []
@@ -200,24 +205,27 @@ runTH ghc (Module _ _ pragmas _ _ imports decls) ghcOpts
                             ++ (pp <$> imports)
                             ++ ["import qualified " ++ helperModule]
                             ++ (prettyPrint <$> everywhere (mkT editSplice) decls)
-          helperModule = "Language.Haskell.TH.ZeroTH.Helper"
-          editSplice :: Decl -> Decl
-          editSplice (SpliceDecl loc splice)
-              = SpliceDecl loc
-                  . ParenSplice
-                  . App (App (Var . Qual (ModuleName helperModule) $ Ident "helper")
-                             (Paren $ spliceToExp splice))
-                  . Tuple
-                  $ Lit . Int . fromIntegral <$> [ srcLine loc, srcColumn loc ]
-          editSplice x = x
-          spliceToExp (ParenSplice e) = e
-          spliceToExp _ = error "TH: FIXME!"
           extraOpts = ["-w"]
           extraOpts' = (' ' :) =<< extraOpts
           disableWarnings (OptionsPragma  loc Nothing    s) = OptionsPragma  loc Nothing $ s ++ extraOpts' -- Turn off all warnings (works for GHC)
           disableWarnings (OptionsPragma  loc (Just GHC) s) = OptionsPragma  loc (Just GHC) $ s ++ extraOpts'
           disableWarnings (LanguagePragma loc           xs) = LanguagePragma loc $ delete (Ident "CPP") xs
           disableWarnings x = x
+
+spliceToExp (ParenSplice e) =  e
+spliceToExp _______________ = error "ZeroTH: FIXME!"
+
+helperModule = "Language.Haskell.TH.ZeroTH.Helper"
+
+helperName = App (Var . Qual (ModuleName helperModule) $ Ident "helper")
+
+editSplice :: Decl -> Decl
+editSplice (SpliceDecl loc splice)
+     = SpliceDecl loc
+          . App (helperName (Paren splice))
+          . Tuple
+          $ Lit . Int . fromIntegral <$> [ srcLine loc, srcColumn loc ]
+editSplice x = x
 
 emptySrcLoc :: SrcLoc
 emptySrcLoc = SrcLoc "" 0 0

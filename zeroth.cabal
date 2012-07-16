@@ -18,7 +18,7 @@ Stability:     experimental
 Tested-with:   GHC == 6.10.3
 Extra-tmp-files: ppsrc/Language/Haskell/TH/ZeroTH/GetOpt.hs
 Extra-source-files: Language/Haskell/TH/ZeroTH/GetOpt.hs
-Cabal-version: >= 1.6
+Cabal-version: >= 1.8
 
 Source-repository head
     Type:      darcs
@@ -37,7 +37,7 @@ Library
                      template-haskell   >= 2.7    && < 3.0,
                      derive             >= 2.5    && < 2.7,
                      uniplate           >= 1.6    && < 1.7,
-                     Cabal              >= 1.12   && < 1.16
+                     Cabal              >= 1.12   && < 1.15
     Exposed-modules: Language.Haskell.TH.ZeroTH.Config,
                      Language.Haskell.TH.ZeroTH.GetOpt,
                      Language.Haskell.TH.ZeroTH,
@@ -62,7 +62,7 @@ Executable zeroth
                      template-haskell   >= 2.5    && < 3.0,
                      derive             >= 2.5    && < 2.7,
                      uniplate           >= 1.6    && < 1.7,
-                     Cabal              >= 1.12   && < 1.16
+                     Cabal              >= 1.12   && < 1.15
     Main-is:         Main.hs
     Other-modules:   Language.Haskell.TH.ZeroTH.Comments,
                      ListUtils,
